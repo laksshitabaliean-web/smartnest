@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SmartNest Dashboard Design</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root{
+    --bg:#0a0e13;
+    --bg-glow:#12202c;
+    --surface:#111922;
+    --surface-2:#16212c;
+    --surface-3:#1b2836;
+    --border:#23323f;
+    --border-soft:#1b2733;
+    --text:#e9f0f7;
+    --text-dim:#93a7ba;
+    --text-faint:#64798c;
+    --ok:#34d399;
+    --warn:#f7b955;
+    --danger:#f47272;
+    --cool:#5aa9ff;
+    --violet:#a78bfa;
+    --radius:16px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  html, body { margin:0; padding:0; }
+
+  body{
+    background:
+      radial-gradient(1200px 600px at 78% -10%, rgba(90,169,255,.10), transparent 60%),
+      radial-gradient(900px 500px at 8% 0%, rgba(167,139,250,.08), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 18px 18px 40px;
+    min-height:100vh;
+  }
+
+  .wrap{ max-width:1320px; margin:0 auto; }
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    padding:12px 16px;
+    background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+    border:1px solid var(--border);
+    border-radius:14px;
+    backdrop-filter: blur(6px);
+  }
+  .brand{ display:flex; align-items:center; gap:11px; }
+  .mark{
+    width:38px; height:38px; border-radius:11px;
+    display:grid; place-items:center;
+    background:linear-gradient(150deg, #1f6feb, #12b981);
+    box-shadow: 0 6px 18px rgba(31,111,235,.32), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .mark svg{ width:21px; height:21px; }
+  .brand-name{ font-size:16.5px; font-weight:660; letter-spacing:-.01em; line-height:1.1; }
+  .brand-sub{ font-size:11px; color:var(--text-faint); letter-spacing:.06em; text-transform:uppercase; margin-top:3px; }
+
+  .nav{ display:flex; gap:4px; margin-left:10px; }
+  .nav a{
+    font-size:13px; color:var(--text-dim); text-decoration:none;
+    padding:7px 12px; border-radius:9px; border:1px solid transparent;
+  }
+  .nav a.on{ color:var(--text); background:var(--surface-2); border-color:var(--border); }
+
+  .topbar-right{ margin-left:auto; display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+
+  .pill{
+    display:inline-flex; align-items:center; gap:7px;
+    font-size:11.5px; color:var(--text-dim);
+    padding:6px 10px; border-radius:999px;
+    background:var(--surface-2); border:1px solid var(--border);
+    white-space:nowrap;
+  }
+  .pill b{ color:var(--text); font-weight:600; }
+  .pill .mono{ font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+
+  .dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+  .dot.ok{ background:var(--ok); box-shadow:0 0 0 3px rgba(52,211,153,.16); }
+  .dot.warn{ background:var(--warn); box-shadow:0 0 0 3px rgba(247,185,85,.16); }
+  .dot.danger{ background:var(--danger); box-shadow:0 0 0 3px rgba(244,114,114,.16); }
+  .dot.off{ background:#4a5b6b; }
+  .live .dot { animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
+
+  .clock{ font-family:var(--mono); font-size:13px; color:var(--text); letter-spacing:.02em; }
+  .clock small{ display:block; font-size:10px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase; }
+
+  /* ---------- page head ---------- */
+  .pagehead{ display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin:22px 2px 14px; }
+  h1{ font-size:22px; font-weight:640; letter-spacing:-.02em; margin:0; }
+  .pagehead p{ margin:0; font-size:13px; color:var(--text-dim); }
+  .pagehead .spacer{ margin-left:auto; }
+
+  .seg{ display:inline-flex; padding:3px; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; }
+  .seg span{
+    font-size:12px; padding:6px 13px; border-radius:7px; color:var(--text-dim); font-weight:520;
+  }
+  .seg span.on{ background:rgba(52,211,153,.14); color:#8ff0c6; box-shadow: inset 0 0 0 1px rgba(52,211,153,.32); }
+
+  /* ---------- grid ---------- */
+  .dash{ display:grid; grid-template-columns:repeat(12, minmax(0, 1fr)); gap:14px; }
+
+  .card{
+    min-width:0;
+    background:linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,.006));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    position:relative;
+    overflow:hidden;
+  }
+  .span6{ grid-column: span 6; }
+  .span5{ grid-column: span 5; }
+  .span4{ grid-column: span 4; }
+  .span3{ grid-column: span 3; }
+
+  .card-head{ display:flex; align-items:flex-start; gap:10px; margin-bottom:14px; min-width:0; }
+  .card-head > div{ min-width:0; }
+  .room-tag{
+    font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--text-faint); padding:3px 7px; border-radius:6px;
+    background:rgba(255,255,255,.04); border:1px solid var(--border-soft);
+  }
+  .card-title{ font-size:15px; font-weight:620; letter-spacing:-.01em; line-height:1.25; }
+  .card-sub{ font-size:11.5px; color:var(--text-faint); margin-top:2px; }
+  .card-head .seg{ margin-left:auto; flex:0 0 auto; }
+
+  /* ---------- metrics ---------- */
+  .metrics{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-bottom:14px; }
+  .metric{
+    background:rgba(255,255,255,.022); border:1px solid var(--border-soft);
+    border-radius:11px; padding:11px 12px;
+  }
+  .metric .label{
+    font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint);
+    display:flex; align-items:center; gap:5px;
+  }
+  .metric .value{
+    font-size:26px; white-space:nowrap; font-weight:600; letter-spacing:-.03em; margin-top:6px; line-height:1;
+    font-variant-numeric: tabular-nums; display:flex; align-items:baseline; gap:5px;
+  }
+  .metric .value .unit{ font-size:12.5px; font-weight:500; color:var(--text-dim); letter-spacing:0; }
+  .metric .foot{ font-size:11px; color:var(--text-faint); margin-top:7px; font-variant-numeric: tabular-nums; }
+
+  .state-ok{ color:var(--ok); }
+  .state-warn{ color:var(--warn); }
+  .state-idle{ color:var(--text-dim); }
+
+  /* ---------- charts ---------- */
+  .chart-block{ margin: 2px 0 14px; }
+  .chart-label{ display:flex; align-items:center; gap:8px; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px; }
+  .chart-label .legend{ margin-left:auto; display:flex; gap:10px; text-transform:none; letter-spacing:0; font-size:10.5px; }
+  .chart-label .legend i{ display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+
+  svg.chart{ width:100%; height:auto; display:block; overflow:visible; }
+
+  /* occupancy strip */
+  .strip{ display:flex; gap:2px; height:22px; align-items:stretch; }
+  .strip span{ border-radius:3px; display:block; }
+  .strip .occ{ background:linear-gradient(180deg, rgba(52,211,153,.85), rgba(52,211,153,.5)); }
+  .strip .vac{ background:rgba(255,255,255,.07); }
+  .strip-axis{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--text-faint); margin-top:5px; }
+
+  /* hysteresis band */
+  .band{ margin:2px 0 4px; }
+  .band-track{
+    position:relative; height:12px; border-radius:6px;
+    background:linear-gradient(90deg, rgba(90,169,255,.22), rgba(90,169,255,.10));
+    border:1px solid var(--border-soft);
+  }
+  .band-zone{
+    position:absolute; top:0; bottom:0;
+    background:rgba(247,185,85,.22);
+    border-left:1px dashed rgba(247,185,85,.65);
+    border-right:1px dashed rgba(247,185,85,.65);
+    border-radius:2px;
+  }
+  .band-marker{
+    position:absolute; top:-5px; bottom:-5px; width:3px; margin-left:-1.5px;
+    background:#fff; border-radius:2px; box-shadow:0 0 0 2px rgba(10,14,19,.85), 0 0 12px rgba(255,255,255,.5);
+  }
+  .band-scale{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--text-faint); margin-top:8px; position:relative; }
+  .band-scale .tick-on{ color:var(--warn); }
+
+  /* ---------- actuator row ---------- */
+  .actuator{
+    display:flex; align-items:center; gap:12px; min-width:0;
+    padding:12px; border-radius:12px;
+    background:rgba(255,255,255,.022); border:1px solid var(--border-soft);
+  }
+  .bulb{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; flex:0 0 auto; }
+  .bulb.on{
+    background:radial-gradient(circle at 50% 40%, rgba(255,214,102,.42), rgba(255,214,102,.10));
+    box-shadow: 0 0 22px rgba(255,203,84,.35), inset 0 0 0 1px rgba(255,203,84,.5);
+    color:#ffd166;
+  }
+  .bulb.off{ background:rgba(255,255,255,.04); box-shadow: inset 0 0 0 1px var(--border); color:#5d7085; }
+
+  .actuator > div:not(.right):not(.bulb){ min-width:0; }
+  .actuator .name{ font-size:13px; font-weight:560; }
+  .actuator .desc{ font-size:11px; color:var(--text-faint); margin-top:2px; font-variant-numeric: tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .actuator .right{ margin-left:auto; display:flex; align-items:center; gap:10px; }
+
+  .state-badge{
+    font-family:var(--mono); font-size:11px; letter-spacing:.09em;
+    padding:5px 9px; border-radius:7px; font-weight:600;
+  }
+  .state-badge.on{ color:#ffe0a3; background:rgba(255,203,84,.13); box-shadow:inset 0 0 0 1px rgba(255,203,84,.35); }
+  .state-badge.off{ color:#93a7ba; background:rgba(255,255,255,.05); box-shadow:inset 0 0 0 1px var(--border); }
+  .state-badge.fan-on{ color:#a9d8ff; background:rgba(90,169,255,.13); box-shadow:inset 0 0 0 1px rgba(90,169,255,.35); }
+
+  .switch{ position:relative; width:44px; height:25px; border-radius:999px; background:rgba(52,211,153,.85); flex:0 0 auto; box-shadow: inset 0 0 0 1px rgba(52,211,153,.6); }
+  .switch::after{ content:""; position:absolute; top:3px; right:3px; width:19px; height:19px; border-radius:50%; background:#06120d; box-shadow:0 1px 3px rgba(0,0,0,.5); }
+  .switch.off{ background:rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px var(--border); }
+  .switch.off::after{ right:auto; left:3px; background:#8fa3b6; }
+
+  /* ---------- card footer / topic chips ---------- */
+  .card-foot{ display:flex; align-items:center; gap:7px; margin-top:13px; flex-wrap:wrap; }
+  .topic{
+    font-family:var(--mono); font-size:10.5px; color:#9fc2e0; max-width:100%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    background:rgba(90,169,255,.07); border:1px solid rgba(90,169,255,.18);
+    padding:3px 7px; border-radius:6px;
+  }
+  .topic::before{ content:"# "; color:rgba(90,169,255,.55); }
+  .confirmed{
+    margin-left:auto; font-size:10.5px; color:var(--text-faint); display:flex; align-items:center; gap:5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .confirmed svg{ width:11px; height:11px; color:var(--ok); }
+
+  /* ---------- event feed ---------- */
+  .feed{ display:flex; flex-direction:column; gap:0; margin:-4px 0 0; }
+  .ev{ display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--border-soft); }
+  .ev:last-child{ border-bottom:0; }
+  .ev .t{ font-family:var(--mono); font-size:10.5px; color:var(--text-faint); flex:0 0 auto; padding-top:2px; }
+  .ev .ico{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex:0 0 auto; }
+  .ev .body{ font-size:12px; line-height:1.45; color:var(--text-dim); }
+  .ev .body b{ color:var(--text); font-weight:560; }
+  .ev .body .tag{
+    font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);
+    margin-left:6px; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,.05); border:1px solid var(--border-soft);
+  }
+  .ico.i-ok{ background:var(--ok); }
+  .ico.i-cool{ background:var(--cool); }
+  .ico.i-warn{ background:var(--warn); }
+  .ico.i-violet{ background:var(--violet); }
+
+  /* ---------- resilience panel ---------- */
+  .res-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed var(--border-soft); font-size:12px; }
+  .res-row:last-of-type{ border-bottom:0; }
+  .res-row .k{ color:var(--text-dim); }
+  .res-row .v{ font-variant-numeric: tabular-nums; font-weight:560; }
+  .v.ok{ color:var(--ok); }
+  .v.warn{ color:var(--warn); }
+  .v.mono{ font-family:var(--mono); font-size:11px; font-weight:500; }
+
+  .banner{
+    display:flex; gap:9px; align-items:flex-start;
+    margin-top:12px; padding:10px 11px; border-radius:10px;
+    background:rgba(52,211,153,.07); border:1px solid rgba(52,211,153,.22);
+    font-size:11.5px; line-height:1.5; color:#a8dcc4;
+  }
+  .banner svg{ width:14px; height:14px; flex:0 0 auto; margin-top:1px; color:var(--ok); }
+
+  .chip-feature{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:10.5px; letter-spacing:.04em; color:#d9c9ff;
+    background:rgba(167,139,250,.12); border:1px solid rgba(167,139,250,.3);
+    padding:4px 9px; border-radius:999px;
+  }
+
+  /* ---------- responsive (phone view) ---------- */
+  @media (max-width: 1080px){
+    .span6, .span5, .span4, .span3{ grid-column: span 12; }
+  }
+  @media (max-width: 560px){
+    body{ padding:12px 12px 30px; }
+    .nav{ display:none; }
+    .topbar-right .pill.hide-sm{ display:none; }
+    .metrics{ grid-template-columns:1fr; }
+    h1{ font-size:19px; }
+    .clock small{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ================= TOP BAR ================= -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.5 10.6 12 3.8l8.5 6.8" />
+          <path d="M5.6 12v7.4h12.8V12" />
+          <path d="M10 19.4v-4.2h4v4.2" />
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">SmartNest</div>
+        <div class="brand-sub">Building Control</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#" class="on">Overview</a>
+      <a href="#">Rooms</a>
+      <a href="#">Events</a>
+      <a href="#">Network</a>
+    </nav>
+
+    <div class="topbar-right">
+      <span class="pill live"><span class="dot ok"></span>MQTT <b>connected</b></span>
+      <span class="pill hide-sm"><span class="dot ok"></span>Wi-Fi <b>−54 dBm</b></span>
+      <span class="pill hide-sm"><b class="mono">192.168.1.42</b><span class="mono">:1883</span></span>
+      <span class="clock">14:32:07<small>Thu 29 Oct</small></span>
+    </div>
+  </header>
+
+  <!-- ================= PAGE HEAD ================= -->
+  <div class="pagehead">
+    <h1>Live overview</h1>
+    <p>Two rooms · 4 sensors · 2 actuators</p>
+    <div class="spacer"></div>
+    <span class="pill"><span class="dot ok"></span>Local control <b>active</b></span>
+    <span class="pill"><span class="dot ok"></span>0 alerts</span>
+    <div class="seg" title="System-wide mode">
+      <span class="on">Auto</span>
+      <span>Manual</span>
+    </div>
+  </div>
+
+  <!-- ================= DASHBOARD ================= -->
+  <main class="dash">
+
+    <!-- ---------- ROOM 1 ---------- -->
+    <section class="card span6">
+      <div class="card-head">
+        <div>
+          <span class="room-tag">Room 1</span>
+          <div class="card-title">Occupancy-aware lighting</div>
+          <div class="card-sub">PIR motion + LDR ambient light → LED</div>
+        </div>
+        <div class="seg"><span class="on">Auto</span><span>Manual</span></div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="label">Occupancy</div>
+          <div class="value state-ok">Occupied</div>
+          <div class="foot">motion 8 s ago · hold 120 s</div>
+        </div>
+        <div class="metric">
+          <div class="label">Ambient light</div>
+          <div class="value">34<span class="unit">lux</span></div>
+          <div class="foot">dark threshold &lt; 80 lux</div>
+        </div>
+      </div>
+
+      <div class="chart-block">
+        <div class="chart-label">
+          <span>Occupancy · last 60 min</span>
+          <span class="legend"><span><i style="background:rgba(52,211,153,.8)"></i>occupied</span></span>
+        </div>
+        <div class="strip">
+          <span class="vac" style="flex:9"></span>
+          <span class="occ" style="flex:5"></span>
+          <span class="vac" style="flex:6"></span>
+          <span class="occ" style="flex:11"></span>
+          <span class="vac" style="flex:4"></span>
+          <span class="occ" style="flex:15"></span>
+        </div>
+        <div class="strip-axis"><span>13:32</span><span>13:47</span><span>14:02</span><span>14:17</span><span>14:32</span></div>
+      </div>
+
+      <div class="actuator">
+        <div class="bulb on">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <path d="M9 18h6M10 21h4"/>
+            <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.4.9 1 .9 1.7V16h5.2v-.4c0-.7.3-1.3.9-1.7A6 6 0 0 0 12 3Z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="name">Room light (LED)</div>
+          <div class="desc">on since 14:31:58 · auto</div>
+        </div>
+        <div class="right">
+          <span class="state-badge on">ON</span>
+          <span class="switch"></span>
+        </div>
+      </div>
+
+      <div class="card-foot">
+        <span class="topic">smartnest/room1/occupancy</span>
+        <span class="topic">smartnest/room1/light/state</span>
+        <span class="confirmed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
+          state confirmed
+        </span>
+      </div>
+    </section>
+
+    <!-- ---------- ROOM 2 ---------- -->
+    <section class="card span6">
+      <div class="card-head">
+        <div>
+          <span class="room-tag">Room 2</span>
+          <div class="card-title">Temperature-aware ventilation</div>
+          <div class="card-sub">DHT22 temperature → fan, with hysteresis</div>
+        </div>
+        <div class="seg"><span class="on">Auto</span><span>Manual</span></div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="label">Temperature</div>
+          <div class="value">24.6<span class="unit">°C</span></div>
+          <div class="foot">humidity 51 % · updated 4 s ago</div>
+        </div>
+        <div class="metric">
+          <div class="label">Ventilation</div>
+          <div class="value state-idle">Idle</div>
+          <div class="foot">starts at 27.0 °C</div>
+        </div>
+      </div>
+
+      <div class="chart-block">
+        <div class="chart-label">
+          <span>Temperature · hysteresis band</span>
+          <span class="legend">
+            <span><i style="background:var(--warn); opacity:.55"></i>25 to 27 °C deadband</span>
+          </span>
+        </div>
+
+        <div class="band">
+          <div class="band-track">
+            <div class="band-zone" style="left:50%; width:20%"></div>
+            <div class="band-marker" style="left:46%"></div>
+          </div>
+          <div class="band-scale">
+            <span>20 °C</span>
+            <span class="tick-on">25 °C fan off</span>
+            <span class="tick-on">27 °C fan on</span>
+            <span>30 °C</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actuator">
+        <div class="bulb off">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="2.2"/>
+            <path d="M12 3.2c1.9 2 3 4.2 3 6.4s-1.1 4.4-3 6.4c-1.9-2-3-4.2-3-6.4s1.1-4.4 3-6.4Z"/>
+            <path d="M3.9 7.7c2.6.4 4.8 1.4 6.4 2.6M3.9 16.3c2.6-.4 4.8-1.4 6.4-2.6M20.1 7.7c-2.6.4-4.8 1.4-6.4 2.6M20.1 16.3c-2.6-.4-4.8-1.4-6.4-2.6"/>
+          </svg>
+        </div>
+        <div>
+          <div class="name">Ventilation fan</div>
+          <div class="desc">off since 14:18:40 · auto · driver: MOSFET</div>
+        </div>
+        <div class="right">
+          <span class="state-badge off">OFF</span>
+          <span class="switch off"></span>
+        </div>
+      </div>
+
+      <div class="card-foot">
+        <span class="topic">smartnest/room2/temperature</span>
+        <span class="topic">smartnest/room2/ventilation/state</span>
+        <span class="confirmed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
+          state confirmed
+        </span>
+      </div>
+    </section>
+
+    <!-- ---------- HISTORY ---------- -->
+    <section class="card span5">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Room 2 temperature</div>
+          <div class="card-sub">Last 60 minutes · 1 sample / 5 s</div>
+        </div>
+        <span class="pill" style="margin-left:auto"><span class="dot ok"></span>2 288 msgs</span>
+      </div>
+
+      <svg class="chart" viewBox="0 0 320 120" preserveAspectRatio="none" role="img" aria-label="Temperature line chart">
+        <defs>
+          <linearGradient id="tfill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5aa9ff" stop-opacity=".30"/>
+            <stop offset="100%" stop-color="#5aa9ff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- grid -->
+        <g stroke="#23323f" stroke-width="1">
+          <line x1="0" y1="20" x2="320" y2="20"/>
+          <line x1="0" y1="55" x2="320" y2="55"/>
+          <line x1="0" y1="90" x2="320" y2="90"/>
+        </g>
+        <!-- fan-on threshold 27 -->
+        <line x1="0" y1="26" x2="320" y2="26" stroke="#f7b955" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
+        <!-- area + line -->
+        <polygon fill="url(#tfill)" points="0,72 0,86 24,84 48,88 72,80 96,84 120,74 144,66 168,54 192,42 216,34 240,30 264,36 288,48 312,58 320,60 320,120 0,120"/>
+        <polyline fill="none" stroke="#5aa9ff" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"
+          points="0,86 24,84 48,88 72,80 96,84 120,74 144,66 168,54 192,42 216,34 240,30 264,36 288,48 312,58 320,60"/>
+        <circle cx="320" cy="60" r="3.4" fill="#5aa9ff" stroke="#0a0e13" stroke-width="2"/>
+      </svg>
+
+      <div class="strip-axis" style="margin-top:8px">
+        <span>13:32</span><span>13:47</span><span>14:02</span><span>14:17</span><span>14:32</span>
+      </div>
+
+      <div class="card-foot">
+        <span class="chip-feature">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v18M5 8h14"/></svg>
+          Retained messages · new dashboards show last known state instantly
+        </span>
+      </div>
+
+      <div class="res-row" style="margin-top:4px"><span class="k">Min / max this hour</span><span class="v mono">23.9 / 27.4 °C</span></div>
+      <div class="res-row"><span class="k">Samples delivered</span><span class="v ok">2 288 / 2 288</span></div>
+      <div class="res-row"><span class="k">Mean publish → render</span><span class="v mono">112 ms</span></div>
+    </section>
+
+    <!-- ---------- EVENT HISTORY ---------- -->
+    <section class="card span4">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Recent events</div>
+          <div class="card-sub">Auto-logged by the controller</div>
+        </div>
+      </div>
+
+      <div class="feed">
+        <div class="ev">
+          <span class="t">14:31:58</span><span class="ico i-ok"></span>
+          <div class="body"><b>Room 1 light ON</b> · motion detected, 34 lux<span class="tag">auto</span></div>
+        </div>
+        <div class="ev">
+          <span class="t">14:29:12</span><span class="ico i-cool"></span>
+          <div class="body"><b>Room 2 fan OFF</b> · 24.8 °C, below 25 °C<span class="tag">auto</span></div>
+        </div>
+        <div class="ev">
+          <span class="t">14:21:36</span><span class="ico i-violet"></span>
+          <div class="body"><b>Command accepted</b> · vent manual OFF from phone, confirmed in 96 ms<span class="tag">manual</span></div>
+        </div>
+        <div class="ev">
+          <span class="t">14:18:40</span><span class="ico i-cool"></span>
+          <div class="body"><b>Room 2 fan ON</b> · 27.3 °C, above 27 °C<span class="tag">auto</span></div>
+        </div>
+        <div class="ev">
+          <span class="t">14:05:22</span><span class="ico i-warn"></span>
+          <div class="body"><b>DHT22 read retried</b> · checksum error, previous value held 1 cycle<span class="tag">fault</span></div>
+        </div>
+        <div class="ev">
+          <span class="t">14:04:10</span><span class="ico i-ok"></span>
+          <div class="body"><b>Broker reconnected</b> · after 2 m 12 s outage, state republished<span class="tag">net</span></div>
+        </div>
+        <div class="ev">
+          <span class="t">14:01:58</span><span class="ico i-warn"></span>
+          <div class="body"><b>Broker unreachable</b> · local automation continued<span class="tag">net</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- RESILIENCE ---------- -->
+    <section class="card span3">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Connection</div>
+          <div class="card-sub">Fault &amp; recovery</div>
+        </div>
+      </div>
+
+      <div class="res-row"><span class="k">Broker</span><span class="v ok">online</span></div>
+      <div class="res-row"><span class="k">Uptime</span><span class="v mono">2 h 41 m</span></div>
+      <div class="res-row"><span class="k">QoS</span><span class="v mono">1</span></div>
+      <div class="res-row"><span class="k">Retained topics</span><span class="v mono">6</span></div>
+      <div class="res-row"><span class="k">Last will (LWT)</span><span class="v mono">armed</span></div>
+      <div class="res-row"><span class="k">Last outage</span><span class="v mono">2 m 12 s</span></div>
+      <div class="res-row"><span class="k">Missed state changes</span><span class="v ok">0</span></div>
+
+      <div class="banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
+        <span>Dashboard disconnected. The Pi kept running occupancy and ventilation rules locally.</span>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+</body>
+</html>
+
