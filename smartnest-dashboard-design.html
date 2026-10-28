@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>SmartNest Dashboard Design</title>
+<title>SmartNest Dashboard</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -86,9 +86,8 @@
   .dot.ok{ background:var(--ok); box-shadow:0 0 0 3px rgba(52,211,153,.16); }
   .dot.warn{ background:var(--warn); box-shadow:0 0 0 3px rgba(247,185,85,.16); }
   .dot.danger{ background:var(--danger); box-shadow:0 0 0 3px rgba(244,114,114,.16); }
+  .dot.cool{ background:var(--cool); box-shadow:0 0 0 3px rgba(90,169,255,.16); }
   .dot.off{ background:#4a5b6b; }
-  .live .dot { animation: pulse 2.4s ease-in-out infinite; }
-  @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
 
   .clock{ font-family:var(--mono); font-size:13px; color:var(--text); letter-spacing:.02em; }
   .clock small{ display:block; font-size:10px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase; }
@@ -100,10 +99,17 @@
   .pagehead .spacer{ margin-left:auto; }
 
   .seg{ display:inline-flex; padding:3px; gap:2px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; }
-  .seg span{
-    font-size:12px; padding:6px 13px; border-radius:7px; color:var(--text-dim); font-weight:520;
+  .seg button,
+  .seg > span{
+    font: inherit; font-size:12px; font-weight:520;
+    padding:6px 13px; border-radius:7px; border:0; background:none;
+    color:var(--text-dim); cursor:pointer; white-space:nowrap;
   }
-  .seg span.on{ background:rgba(52,211,153,.14); color:#8ff0c6; box-shadow: inset 0 0 0 1px rgba(52,211,153,.32); }
+  .seg > span{ cursor:default; }
+  .seg .on{ background:rgba(52,211,153,.14); color:#8ff0c6; box-shadow: inset 0 0 0 1px rgba(52,211,153,.32); }
+  .seg .on.mixed{ background:rgba(247,185,85,.14); color:#ffd79a; box-shadow: inset 0 0 0 1px rgba(247,185,85,.34); }
+  .seg button:focus-visible{ outline:2px solid var(--cool); outline-offset:2px; }
+  .seg button[hidden]{ display:none; }
 
   /* ---------- grid ---------- */
   .dash{ display:grid; grid-template-columns:repeat(12, minmax(0, 1fr)); gap:14px; }
@@ -148,6 +154,8 @@
     font-variant-numeric: tabular-nums; display:flex; align-items:baseline; gap:5px;
   }
   .metric .value .unit{ font-size:12.5px; font-weight:500; color:var(--text-dim); letter-spacing:0; }
+  .metric .value.is-muted{ font-size:15px; font-weight:520; letter-spacing:0; color:var(--text-faint); }
+  .metric .value.is-stale{ opacity:.5; }
   .metric .foot{ font-size:11px; color:var(--text-faint); margin-top:7px; font-variant-numeric: tabular-nums; }
 
   .state-ok{ color:var(--ok); }
@@ -156,7 +164,7 @@
 
   /* ---------- charts ---------- */
   .chart-block{ margin: 2px 0 14px; }
-  .chart-label{ display:flex; align-items:center; gap:8px; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px; }
+  .chart-label{ display:flex; align-items:center; gap:8px; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint); margin-bottom:6px; flex-wrap:wrap; row-gap:4px; }
   .chart-label .legend{ margin-left:auto; display:flex; gap:10px; text-transform:none; letter-spacing:0; font-size:10.5px; }
   .chart-label .legend i{ display:inline-block; width:14px; height:3px; border-radius:2px; margin-right:5px; vertical-align:middle; }
 
@@ -186,6 +194,7 @@
   .band-marker{
     position:absolute; top:-5px; bottom:-5px; width:3px; margin-left:-1.5px;
     background:#fff; border-radius:2px; box-shadow:0 0 0 2px rgba(10,14,19,.85), 0 0 12px rgba(255,255,255,.5);
+    transition: left .3s ease;
   }
   .band-scale{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--text-faint); margin-top:8px; position:relative; }
   .band-scale .tick-on{ color:var(--warn); }
@@ -217,10 +226,24 @@
   .state-badge.off{ color:#93a7ba; background:rgba(255,255,255,.05); box-shadow:inset 0 0 0 1px var(--border); }
   .state-badge.fan-on{ color:#a9d8ff; background:rgba(90,169,255,.13); box-shadow:inset 0 0 0 1px rgba(90,169,255,.35); }
 
-  .switch{ position:relative; width:44px; height:25px; border-radius:999px; background:rgba(52,211,153,.85); flex:0 0 auto; box-shadow: inset 0 0 0 1px rgba(52,211,153,.6); }
+  .sim-tag{
+    font-family:var(--mono); font-size:9px; letter-spacing:.08em;
+    color:var(--text-faint); padding:2px 5px; border-radius:4px;
+    background:rgba(255,255,255,.03); border:1px solid var(--border-soft);
+  }
+
+  .switch{
+    position:relative; width:44px; height:25px; border-radius:999px;
+    background:rgba(52,211,153,.85); flex:0 0 auto;
+    border:0; padding:0; cursor:pointer;
+    box-shadow: inset 0 0 0 1px rgba(52,211,153,.6);
+    transition: background .16s ease;
+  }
   .switch::after{ content:""; position:absolute; top:3px; right:3px; width:19px; height:19px; border-radius:50%; background:#06120d; box-shadow:0 1px 3px rgba(0,0,0,.5); }
   .switch.off{ background:rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px var(--border); }
   .switch.off::after{ right:auto; left:3px; background:#8fa3b6; }
+  .switch:disabled{ cursor:not-allowed; opacity:.45; }
+  .switch:focus-visible{ outline:2px solid var(--cool); outline-offset:3px; }
 
   /* ---------- card footer / topic chips ---------- */
   .card-foot{ display:flex; align-items:center; gap:7px; margin-top:13px; flex-wrap:wrap; }
@@ -249,6 +272,16 @@
     font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-faint);
     margin-left:6px; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,.05); border:1px solid var(--border-soft);
   }
+  .ev .body .stage{
+    font-size:9px; letter-spacing:.07em; text-transform:uppercase;
+    margin-left:6px; padding:1px 5px; border-radius:4px;
+    border:1px solid; font-weight:600;
+  }
+  .stage.s-requested{ color:#c9b6ff; border-color:rgba(167,139,250,.45); background:rgba(167,139,250,.12); }
+  .stage.s-accepted{ color:#a9d8ff; border-color:rgba(90,169,255,.45); background:rgba(90,169,255,.12); }
+  .stage.s-confirmed{ color:#8ff0c6; border-color:rgba(52,211,153,.45); background:rgba(52,211,153,.12); }
+  .feed-empty{ font-size:12px; line-height:1.5; color:var(--text-faint); padding:16px 0 10px; }
+
   .ico.i-ok{ background:var(--ok); }
   .ico.i-cool{ background:var(--cool); }
   .ico.i-warn{ background:var(--warn); }
@@ -270,6 +303,8 @@
     font-size:11.5px; line-height:1.5; color:#a8dcc4;
   }
   .banner svg{ width:14px; height:14px; flex:0 0 auto; margin-top:1px; color:var(--ok); }
+  .banner.warn{ background:rgba(247,185,85,.07); border-color:rgba(247,185,85,.24); color:#e8c48c; }
+  .banner.warn svg{ color:var(--warn); }
 
   .chip-feature{
     display:inline-flex; align-items:center; gap:6px;
@@ -288,11 +323,24 @@
     .topbar-right .pill.hide-sm{ display:none; }
     .metrics{ grid-template-columns:1fr; }
     h1{ font-size:19px; }
-    .clock small{ display:none; }
+    .clock small{ font-size:9px; }
   }
 </style>
 </head>
 <body>
+<!--
+  Elements filled by the script at the bottom of this file:
+  header      #clock-time, #clock-date, #mqtt-text, #mqtt-dot, #alert-text, #alert-dot
+  room 1      #r1-occupancy, #r1-occupancy-foot, #r1-lux, #r1-lux-foot, #r1-strip, #r1-strip-axis
+              #r1-light-desc, #r1-light-badge, #r1-light-switch, #r1-light-confirmed, #r1-light-bulb
+  room 2      #r2-temp, #r2-temp-foot, #r2-vent, #r2-vent-foot, #r2-temp-sub, #r2-band-marker
+              #r2-fan-desc, #r2-fan-badge, #r2-fan-switch, #r2-fan-confirmed, #r2-fan-bulb
+  history     #temp-chart, #chart-line, #chart-area, #chart-last, #thresh-on, #thresh-off
+              #chart-empty, #temp-axis, #temp-stat-min, #temp-stat-mean, #temp-stat-max, #temp-samples
+  events      #event-feed
+  connection  #conn-broker, #conn-last, #conn-uptime, #conn-qos, #conn-retained,
+              #conn-lwt, #conn-outage, #conn-missed, #conn-banner
+-->
 <div class="wrap">
 
   <!-- ================= TOP BAR ================= -->
@@ -319,10 +367,16 @@
     </nav>
 
     <div class="topbar-right">
-      <span class="pill live"><span class="dot ok"></span>MQTT <b>connected</b></span>
-      <span class="pill hide-sm"><span class="dot ok"></span>Wi-Fi <b>−54 dBm</b></span>
-      <span class="pill hide-sm"><b class="mono">192.168.1.42</b><span class="mono">:1883</span></span>
-      <span class="clock">14:32:07<small>Thu 29 Oct</small></span>
+      <span class="pill" id="mqtt-pill" title="Broker connection reported by the dashboard">
+        <span class="dot off" id="mqtt-dot"></span>MQTT <b id="mqtt-text">not connected</b>
+      </span>
+      <span class="pill" title="Values come from a local sample feed, not from the broker">
+        <span class="dot warn"></span>Sample data
+      </span>
+      <time class="clock" id="clock" datetime="">
+        <span id="clock-time">--:--:--</span>
+        <small id="clock-date">loading date</small>
+      </time>
     </div>
   </header>
 
@@ -331,11 +385,12 @@
     <h1>Live overview</h1>
     <p>Two rooms · 4 sensors · 2 actuators</p>
     <div class="spacer"></div>
-    <span class="pill"><span class="dot ok"></span>Local control <b>active</b></span>
-    <span class="pill"><span class="dot ok"></span>0 alerts</span>
-    <div class="seg" title="System-wide mode">
-      <span class="on">Auto</span>
-      <span>Manual</span>
+    <span class="pill"><span class="dot off"></span>Controller <b>no link</b></span>
+    <span class="pill" id="alert-pill"><span class="dot ok" id="alert-dot"></span><span id="alert-text">no alerts</span></span>
+    <div class="seg" id="system-mode" role="group" aria-label="System-wide mode">
+      <button type="button" data-mode="auto" aria-pressed="true" class="on">Auto</button>
+      <button type="button" data-mode="manual" aria-pressed="false">Manual</button>
+      <span id="system-mixed" class="on mixed" role="status" hidden>Mixed</span>
     </div>
   </div>
 
@@ -350,19 +405,22 @@
           <div class="card-title">Occupancy-aware lighting</div>
           <div class="card-sub">PIR motion + LDR ambient light → LED</div>
         </div>
-        <div class="seg"><span class="on">Auto</span><span>Manual</span></div>
+        <div class="seg room-mode" data-room="room1" role="group" aria-label="Room 1 mode">
+          <button type="button" data-mode="auto" aria-pressed="true" class="on">Auto</button>
+          <button type="button" data-mode="manual" aria-pressed="false">Manual</button>
+        </div>
       </div>
 
       <div class="metrics">
         <div class="metric">
           <div class="label">Occupancy</div>
-          <div class="value state-ok">Occupied</div>
-          <div class="foot">motion 8 s ago · hold 120 s</div>
+          <div class="value state-ok" id="r1-occupancy">Occupied</div>
+          <div class="foot" id="r1-occupancy-foot">motion 8 s ago · hold 120 s</div>
         </div>
         <div class="metric">
           <div class="label">Ambient light</div>
-          <div class="value">34<span class="unit">lux</span></div>
-          <div class="foot">dark threshold &lt; 80 lux</div>
+          <div class="value" id="r1-lux">34<span class="unit">lux</span></div>
+          <div class="foot" id="r1-lux-foot">updated 4 s ago · dark threshold &lt; 80 lux</div>
         </div>
       </div>
 
@@ -371,19 +429,12 @@
           <span>Occupancy · last 60 min</span>
           <span class="legend"><span><i style="background:rgba(52,211,153,.8)"></i>occupied</span></span>
         </div>
-        <div class="strip">
-          <span class="vac" style="flex:9"></span>
-          <span class="occ" style="flex:5"></span>
-          <span class="vac" style="flex:6"></span>
-          <span class="occ" style="flex:11"></span>
-          <span class="vac" style="flex:4"></span>
-          <span class="occ" style="flex:15"></span>
-        </div>
-        <div class="strip-axis"><span>13:32</span><span>13:47</span><span>14:02</span><span>14:17</span><span>14:32</span></div>
+        <div class="strip" id="r1-strip"></div>
+        <div class="strip-axis" id="r1-strip-axis"></div>
       </div>
 
       <div class="actuator">
-        <div class="bulb on">
+        <div class="bulb on" id="r1-light-bulb">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
             <path d="M9 18h6M10 21h4"/>
             <path d="M12 3a6 6 0 0 0-3.5 10.9c.6.4.9 1 .9 1.7V16h5.2v-.4c0-.7.3-1.3.9-1.7A6 6 0 0 0 12 3Z"/>
@@ -391,21 +442,21 @@
         </div>
         <div>
           <div class="name">Room light (LED)</div>
-          <div class="desc">on since 14:31:58 · auto</div>
+          <div class="desc" id="r1-light-desc">on since 14:31:58 · auto</div>
         </div>
         <div class="right">
-          <span class="state-badge on">ON</span>
-          <span class="switch"></span>
+          <span class="sim-tag" title="Simulated control, no hardware attached">SIM</span>
+          <span class="state-badge on" id="r1-light-badge">ON</span>
+          <button type="button" class="switch" id="r1-light-switch" role="switch"
+                  aria-checked="true" aria-label="Room light, simulated control"
+                  data-actuator="room1:light" title="Simulated control"></button>
         </div>
       </div>
 
       <div class="card-foot">
         <span class="topic">smartnest/room1/occupancy</span>
         <span class="topic">smartnest/room1/light/state</span>
-        <span class="confirmed">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
-          state confirmed
-        </span>
+        <span class="confirmed" id="r1-light-confirmed"></span>
       </div>
     </section>
 
@@ -417,19 +468,22 @@
           <div class="card-title">Temperature-aware ventilation</div>
           <div class="card-sub">DHT22 temperature → fan, with hysteresis</div>
         </div>
-        <div class="seg"><span class="on">Auto</span><span>Manual</span></div>
+        <div class="seg room-mode" data-room="room2" role="group" aria-label="Room 2 mode">
+          <button type="button" data-mode="auto" aria-pressed="true" class="on">Auto</button>
+          <button type="button" data-mode="manual" aria-pressed="false">Manual</button>
+        </div>
       </div>
 
       <div class="metrics">
         <div class="metric">
           <div class="label">Temperature</div>
-          <div class="value">24.6<span class="unit">°C</span></div>
-          <div class="foot">humidity 51 % · updated 4 s ago</div>
+          <div class="value" id="r2-temp">24.6<span class="unit">°C</span></div>
+          <div class="foot" id="r2-temp-foot">humidity 51 % · updated 4 s ago</div>
         </div>
         <div class="metric">
           <div class="label">Ventilation</div>
-          <div class="value state-idle">Idle</div>
-          <div class="foot">starts at 27.0 °C</div>
+          <div class="value state-idle" id="r2-vent">Idle</div>
+          <div class="foot" id="r2-vent-foot">starts at 27.0 °C</div>
         </div>
       </div>
 
@@ -443,20 +497,15 @@
 
         <div class="band">
           <div class="band-track">
-            <div class="band-zone" style="left:50%; width:20%"></div>
-            <div class="band-marker" style="left:46%"></div>
+            <div class="band-zone" id="r2-band-zone"></div>
+            <div class="band-marker" id="r2-band-marker" style="left:46%"></div>
           </div>
-          <div class="band-scale">
-            <span>20 °C</span>
-            <span class="tick-on">25 °C fan off</span>
-            <span class="tick-on">27 °C fan on</span>
-            <span>30 °C</span>
-          </div>
+          <div class="band-scale" id="r2-band-scale"></div>
         </div>
       </div>
 
       <div class="actuator">
-        <div class="bulb off">
+        <div class="bulb off" id="r2-fan-bulb">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="2.2"/>
             <path d="M12 3.2c1.9 2 3 4.2 3 6.4s-1.1 4.4-3 6.4c-1.9-2-3-4.2-3-6.4s1.1-4.4 3-6.4Z"/>
@@ -465,21 +514,21 @@
         </div>
         <div>
           <div class="name">Ventilation fan</div>
-          <div class="desc">off since 14:18:40 · auto · driver: MOSFET</div>
+          <div class="desc" id="r2-fan-desc">off since 14:18:40 · auto</div>
         </div>
         <div class="right">
-          <span class="state-badge off">OFF</span>
-          <span class="switch off"></span>
+          <span class="sim-tag" title="Simulated control, no hardware attached">SIM</span>
+          <span class="state-badge off" id="r2-fan-badge">OFF</span>
+          <button type="button" class="switch off" id="r2-fan-switch" role="switch"
+                  aria-checked="false" aria-label="Ventilation fan, simulated control"
+                  data-actuator="room2:fan" title="Simulated control"></button>
         </div>
       </div>
 
       <div class="card-foot">
         <span class="topic">smartnest/room2/temperature</span>
         <span class="topic">smartnest/room2/ventilation/state</span>
-        <span class="confirmed">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
-          state confirmed
-        </span>
+        <span class="confirmed" id="r2-fan-confirmed"></span>
       </div>
     </section>
 
@@ -488,47 +537,53 @@
       <div class="card-head">
         <div>
           <div class="card-title">Room 2 temperature</div>
-          <div class="card-sub">Last 60 minutes · 1 sample / 5 s</div>
+          <div class="card-sub" id="r2-temp-sub">Last 60 minutes</div>
         </div>
-        <span class="pill" style="margin-left:auto"><span class="dot ok"></span>2 288 msgs</span>
+        <span class="pill" style="margin-left:auto"><span class="dot cool"></span><span id="temp-samples">0 samples</span></span>
       </div>
 
-      <svg class="chart" viewBox="0 0 320 120" preserveAspectRatio="none" role="img" aria-label="Temperature line chart">
+      <div class="chart-label" style="margin-bottom:6px">
+        <span>Rolling window</span>
+        <span class="legend">
+          <span><i style="background:var(--warn); opacity:.55"></i>27 °C fan on</span>
+          <span><i style="background:var(--warn); opacity:.3"></i>25 °C fan off</span>
+        </span>
+      </div>
+
+      <svg class="chart" id="temp-chart" viewBox="0 0 320 120" preserveAspectRatio="none" role="img" aria-label="Temperature history">
         <defs>
           <linearGradient id="tfill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#5aa9ff" stop-opacity=".30"/>
             <stop offset="100%" stop-color="#5aa9ff" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <!-- grid -->
         <g stroke="#23323f" stroke-width="1">
           <line x1="0" y1="20" x2="320" y2="20"/>
           <line x1="0" y1="55" x2="320" y2="55"/>
           <line x1="0" y1="90" x2="320" y2="90"/>
         </g>
-        <!-- fan-on threshold 27 -->
-        <line x1="0" y1="26" x2="320" y2="26" stroke="#f7b955" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
-        <!-- area + line -->
-        <polygon fill="url(#tfill)" points="0,72 0,86 24,84 48,88 72,80 96,84 120,74 144,66 168,54 192,42 216,34 240,30 264,36 288,48 312,58 320,60 320,120 0,120"/>
-        <polyline fill="none" stroke="#5aa9ff" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round"
-          points="0,86 24,84 48,88 72,80 96,84 120,74 144,66 168,54 192,42 216,34 240,30 264,36 288,48 312,58 320,60"/>
-        <circle cx="320" cy="60" r="3.4" fill="#5aa9ff" stroke="#0a0e13" stroke-width="2"/>
+        <line id="thresh-on" x1="0" y1="26" x2="320" y2="26" stroke="#f7b955" stroke-width="1" stroke-dasharray="4 4" opacity=".55"/>
+        <line id="thresh-off" x1="0" y1="46" x2="320" y2="46" stroke="#f7b955" stroke-width="1" stroke-dasharray="2 5" opacity=".35"/>
+        <polygon id="chart-area" fill="url(#tfill)" points=""/>
+        <polyline id="chart-line" fill="none" stroke="#5aa9ff" stroke-width="2.1" stroke-linejoin="round" stroke-linecap="round" points=""/>
+        <circle id="chart-last" cx="0" cy="0" r="3.4" fill="#5aa9ff" stroke="#0a0e13" stroke-width="2" opacity="0"/>
+        <text id="chart-empty" x="160" y="66" text-anchor="middle" fill="#64798c" font-size="10"
+              font-family="ui-monospace, monospace" style="display:none">waiting for samples</text>
       </svg>
 
-      <div class="strip-axis" style="margin-top:8px">
-        <span>13:32</span><span>13:47</span><span>14:02</span><span>14:17</span><span>14:32</span>
-      </div>
+      <div class="strip-axis" style="margin-top:8px" id="temp-axis"></div>
+
+      <div class="res-row" style="margin-top:10px"><span class="k">Min</span><span class="v mono" id="temp-stat-min">n/a</span></div>
+      <div class="res-row"><span class="k">Mean</span><span class="v mono" id="temp-stat-mean">n/a</span></div>
+      <div class="res-row"><span class="k">Max</span><span class="v mono" id="temp-stat-max">n/a</span></div>
+      <div class="res-row"><span class="k">Fan thresholds</span><span class="v mono" id="temp-stat-thresholds">25.0 / 27.0 °C</span></div>
 
       <div class="card-foot">
         <span class="chip-feature">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v18M5 8h14"/></svg>
-          Retained messages · new dashboards show last known state instantly
+          Planned: retained messages give new clients the last known state
         </span>
       </div>
-
-      <div class="res-row" style="margin-top:4px"><span class="k">Min / max this hour</span><span class="v mono">23.9 / 27.4 °C</span></div>
-      <div class="res-row"><span class="k">Samples delivered</span><span class="v ok">2 288 / 2 288</span></div>
-      <div class="res-row"><span class="k">Mean publish → render</span><span class="v mono">112 ms</span></div>
     </section>
 
     <!-- ---------- EVENT HISTORY ---------- -->
@@ -536,40 +591,11 @@
       <div class="card-head">
         <div>
           <div class="card-title">Recent events</div>
-          <div class="card-sub">Auto-logged by the controller</div>
+          <div class="card-sub">Logged by this dashboard</div>
         </div>
       </div>
 
-      <div class="feed">
-        <div class="ev">
-          <span class="t">14:31:58</span><span class="ico i-ok"></span>
-          <div class="body"><b>Room 1 light ON</b> · motion detected, 34 lux<span class="tag">auto</span></div>
-        </div>
-        <div class="ev">
-          <span class="t">14:29:12</span><span class="ico i-cool"></span>
-          <div class="body"><b>Room 2 fan OFF</b> · 24.8 °C, below 25 °C<span class="tag">auto</span></div>
-        </div>
-        <div class="ev">
-          <span class="t">14:21:36</span><span class="ico i-violet"></span>
-          <div class="body"><b>Command accepted</b> · vent manual OFF from phone, confirmed in 96 ms<span class="tag">manual</span></div>
-        </div>
-        <div class="ev">
-          <span class="t">14:18:40</span><span class="ico i-cool"></span>
-          <div class="body"><b>Room 2 fan ON</b> · 27.3 °C, above 27 °C<span class="tag">auto</span></div>
-        </div>
-        <div class="ev">
-          <span class="t">14:05:22</span><span class="ico i-warn"></span>
-          <div class="body"><b>DHT22 read retried</b> · checksum error, previous value held 1 cycle<span class="tag">fault</span></div>
-        </div>
-        <div class="ev">
-          <span class="t">14:04:10</span><span class="ico i-ok"></span>
-          <div class="body"><b>Broker reconnected</b> · after 2 m 12 s outage, state republished<span class="tag">net</span></div>
-        </div>
-        <div class="ev">
-          <span class="t">14:01:58</span><span class="ico i-warn"></span>
-          <div class="body"><b>Broker unreachable</b> · local automation continued<span class="tag">net</span></div>
-        </div>
-      </div>
+      <div class="feed" id="event-feed" aria-live="polite"></div>
     </section>
 
     <!-- ---------- RESILIENCE ---------- -->
@@ -581,23 +607,881 @@
         </div>
       </div>
 
-      <div class="res-row"><span class="k">Broker</span><span class="v ok">online</span></div>
-      <div class="res-row"><span class="k">Uptime</span><span class="v mono">2 h 41 m</span></div>
-      <div class="res-row"><span class="k">QoS</span><span class="v mono">1</span></div>
-      <div class="res-row"><span class="k">Retained topics</span><span class="v mono">6</span></div>
-      <div class="res-row"><span class="k">Last will (LWT)</span><span class="v mono">armed</span></div>
-      <div class="res-row"><span class="k">Last outage</span><span class="v mono">2 m 12 s</span></div>
-      <div class="res-row"><span class="k">Missed state changes</span><span class="v ok">0</span></div>
+      <div class="res-row"><span class="k">Broker</span><span class="v warn" id="conn-broker">not connected</span></div>
+      <div class="res-row"><span class="k">Last message</span><span class="v mono" id="conn-last">none</span></div>
+      <div class="res-row"><span class="k">Uptime</span><span class="v mono" id="conn-uptime">n/a</span></div>
+      <div class="res-row"><span class="k">QoS</span><span class="v mono" id="conn-qos">not negotiated</span></div>
+      <div class="res-row"><span class="k">Retained topics</span><span class="v mono" id="conn-retained">n/a</span></div>
+      <div class="res-row"><span class="k">Last will (LWT)</span><span class="v mono" id="conn-lwt">not armed</span></div>
+      <div class="res-row"><span class="k">Last outage</span><span class="v mono" id="conn-outage">none recorded</span></div>
+      <div class="res-row"><span class="k">Missed state changes</span><span class="v mono" id="conn-missed">n/a</span></div>
 
-      <div class="banner">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5 5L20 6.5"/></svg>
-        <span>Dashboard disconnected. The Pi kept running occupancy and ventilation rules locally.</span>
+      <div class="banner warn" id="conn-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 8.5v5M12 17h.01"/><circle cx="12" cy="12" r="9"/>
+        </svg>
+        <span>No broker connection. Actuator states cannot be confirmed, and every value here is sample data.</span>
       </div>
     </section>
 
   </main>
 
 </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Configuration. These thresholds must match the controller firmware; the
+  // dashboard never applies them itself.
+  // ---------------------------------------------------------------------------
+  var CONFIG = {
+    tempWindowMs: 60 * 60 * 1000,
+    occupancyWindowMs: 60 * 60 * 1000,
+    occupancyBuckets: 20,
+    staleAfterMs: 15000,
+    maxVisibleEvents: 8,
+    sampleIntervalMs: 4000,
+    tempMin: 20,
+    tempMax: 30,
+    fanOn: 27.0,
+    fanOff: 25.0,
+    darkLux: 80,
+    occupancyHoldS: 120
+  };
+
+  var SENSOR_LABEL = {
+    room1: { occupancy: 'PIR occupancy', lux: 'LDR ambient light' },
+    room2: { temperature: 'DHT22 temperature', humidity: 'DHT22 humidity' }
+  };
+
+  var ACTUATOR_LABEL = {
+    room1: { light: 'Room 1 light' },
+    room2: { fan: 'Room 2 fan' }
+  };
+
+  // ---------------------------------------------------------------------------
+  // State. Sensors, actuators, connection and modes are kept apart on purpose,
+  // so a sensor update can never silently change an actuator record.
+  // ---------------------------------------------------------------------------
+  var state = {
+    sensors: {
+      room1: { occupancy: reading(true), lux: reading(34) },
+      room2: { temperature: reading(24.6), humidity: reading(51) }
+    },
+    actuators: {
+      room1: { light: { on: true, since: Date.now() - 6 * 60000, source: 'auto', confirmed: false } },
+      room2: { fan: { on: false, since: Date.now() - 13 * 60000, source: 'auto', confirmed: false } }
+    },
+    modes: { room1: 'auto', room2: 'auto' },
+    connection: {
+      mqtt: 'disconnected',
+      lastMessageAt: null,
+      connectedSince: null,
+      qos: null,
+      retainedTopics: null,
+      lwt: false,
+      lastOutageMs: null,
+      missedStateChanges: null
+    },
+    history: { temperature: [], occupancy: [] },
+    events: [],
+    occupancySince: Date.now()
+  };
+
+  var feedTimer = null;
+  var feedPhase = 0;
+
+  // ---------------------------------------------------------------------------
+  // Small helpers
+  // ---------------------------------------------------------------------------
+  function el(id) { return document.getElementById(id); }
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function round1(n) { return Math.round(n * 10) / 10; }
+  function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
+
+  function reading(value) {
+    return { value: value, at: Date.now(), status: 'ok', error: null };
+  }
+
+  function hhmmss(ts) {
+    var d = new Date(ts);
+    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
+  function hhmm(ts) {
+    var d = new Date(ts);
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function ago(ts) {
+    var s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (s < 1) return 'just now';
+    if (s < 60) return s + ' s ago';
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + ' min ago';
+    return Math.floor(m / 60) + ' h ago';
+  }
+
+  function duration(ms) {
+    var s = Math.round(ms / 1000);
+    if (s < 60) return s + ' s';
+    var m = Math.floor(s / 60);
+    if (m < 60) return m + ' min ' + (s % 60) + ' s';
+    return Math.floor(m / 60) + ' h ' + (m % 60) + ' m';
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function freshness(r) {
+    if (!r || r.status !== 'ok') return 'invalid';
+    return (Date.now() - r.at > CONFIG.staleAfterMs) ? 'stale' : 'fresh';
+  }
+
+  function setText(id, text) { el(id).textContent = text; }
+
+  // ---------------------------------------------------------------------------
+  // Clock. Real local time and date, updated once a second.
+  // ---------------------------------------------------------------------------
+  var WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  function renderClock() {
+    var now = new Date();
+    el('clock-time').textContent =
+      pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    el('clock-date').textContent =
+      WEEKDAY[now.getDay()] + ' ' + now.getDate() + ' ' + MONTH[now.getMonth()];
+    el('clock').setAttribute('datetime', now.toISOString());
+  }
+
+  // ---------------------------------------------------------------------------
+  // Modes.
+  // Rule used here: the system control is a broadcast. Choosing Auto or Manual
+  // applies that mode to both rooms. A room can then be changed on its own; when
+  // the two rooms disagree the system control shows Mixed instead of claiming
+  // one mode. The controller is still free to ignore any of this, so the
+  // dashboard treats modes as requests, not as facts.
+  // ---------------------------------------------------------------------------
+  function renderModes() {
+    ['room1', 'room2'].forEach(function (room) {
+      var seg = document.querySelector('.room-mode[data-room="' + room + '"]');
+      var mode = state.modes[room];
+      Array.prototype.forEach.call(seg.querySelectorAll('button[data-mode]'), function (b) {
+        var active = b.getAttribute('data-mode') === mode;
+        b.classList.toggle('on', active);
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    });
+
+    var mixed = state.modes.room1 !== state.modes.room2;
+    var sys = el('system-mode');
+    Array.prototype.forEach.call(sys.querySelectorAll('button[data-mode]'), function (b) {
+      var active = !mixed && b.getAttribute('data-mode') === state.modes.room1;
+      b.classList.toggle('on', active);
+      b.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    var chip = el('system-mixed');
+    chip.hidden = !mixed;
+    chip.textContent = 'Mixed';
+  }
+
+  function setSystemMode(mode) {
+    if (mode !== 'auto' && mode !== 'manual') return;
+    if (state.modes.room1 === mode && state.modes.room2 === mode) return;
+    state.modes.room1 = mode;
+    state.modes.room2 = mode;
+    clearConfirmation('room1');
+    clearConfirmation('room2');
+    addEvent({
+      kind: 'mode', ico: 'i-violet', tag: 'mode',
+      title: 'System mode set to ' + cap(mode),
+      detail: 'applied to Room 1 and Room 2'
+    });
+    render();
+  }
+
+  function setRoomMode(room, mode) {
+    if (mode !== 'auto' && mode !== 'manual') return;
+    if (state.modes[room] === mode) return;
+    state.modes[room] = mode;
+    clearConfirmation(room);
+    addEvent({
+      kind: 'mode', ico: 'i-violet', tag: mode,
+      title: (room === 'room1' ? 'Room 1' : 'Room 2') + ' mode set to ' + cap(mode),
+      detail: mode === 'auto'
+        ? 'controller decides actuator states from sensor readings'
+        : 'manual commands are now allowed for this room'
+    });
+    render();
+  }
+
+  function clearConfirmation(room) {
+    Object.keys(state.actuators[room]).forEach(function (name) {
+      state.actuators[room][name].confirmed = false;
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sensor rendering
+  // ---------------------------------------------------------------------------
+  function renderSensors() {
+    renderOccupancyMetric();
+    renderLuxMetric();
+    renderTemperatureMetric();
+  }
+
+  function renderOccupancyMetric() {
+    var r = state.sensors.room1.occupancy;
+    var kind = freshness(r);
+    var value = el('r1-occupancy');
+    var foot = el('r1-occupancy-foot');
+
+    if (kind === 'invalid') {
+      value.className = 'value is-muted';
+      value.textContent = 'unavailable';
+      foot.textContent = r.error || 'PIR reading rejected';
+      return;
+    }
+
+    value.className = 'value ' + (kind === 'stale' ? 'is-stale ' : '') + (r.value ? 'state-ok' : 'state-idle');
+    value.textContent = r.value ? 'Occupied' : 'Clear';
+
+    var held = duration(Date.now() - state.occupancySince);
+    if (kind === 'stale') {
+      foot.textContent = 'stale, last update ' + ago(r.at);
+    } else if (r.value) {
+      foot.textContent = 'occupied for ' + held + ' · hold ' + CONFIG.occupancyHoldS + ' s';
+    } else {
+      foot.textContent = 'clear for ' + held + ' · hold ' + CONFIG.occupancyHoldS + ' s';
+    }
+  }
+
+  function renderLuxMetric() {
+    var r = state.sensors.room1.lux;
+    var kind = freshness(r);
+    var value = el('r1-lux');
+    var foot = el('r1-lux-foot');
+
+    if (kind === 'invalid') {
+      value.className = 'value is-muted';
+      value.textContent = 'unavailable';
+      foot.textContent = r.error || 'LDR reading rejected';
+      return;
+    }
+
+    value.className = 'value' + (kind === 'stale' ? ' is-stale' : '');
+    value.innerHTML = Math.round(r.value) + '<span class="unit">lux</span>';
+    foot.textContent = kind === 'stale'
+      ? 'stale, last update ' + ago(r.at)
+      : 'updated ' + ago(r.at) + ' · dark threshold < ' + CONFIG.darkLux + ' lux';
+  }
+
+  function renderTemperatureMetric() {
+    var t = state.sensors.room2.temperature;
+    var h = state.sensors.room2.humidity;
+    var kind = freshness(t);
+    var value = el('r2-temp');
+    var foot = el('r2-temp-foot');
+
+    if (kind === 'invalid') {
+      value.className = 'value is-muted';
+      value.textContent = 'unavailable';
+      foot.textContent = t.error || 'DHT22 reading rejected';
+      return;
+    }
+
+    value.className = 'value' + (kind === 'stale' ? ' is-stale' : '');
+    value.innerHTML = t.value.toFixed(1) + '<span class="unit">°C</span>';
+
+    var hum = (h && h.status === 'ok')
+      ? 'humidity ' + Math.round(h.value) + ' %'
+      : 'humidity unavailable';
+
+    foot.textContent = kind === 'stale'
+      ? hum + ' · stale, last update ' + ago(t.at)
+      : hum + ' · updated ' + ago(t.at);
+
+    // Hysteresis marker on the band
+    var span = CONFIG.tempMax - CONFIG.tempMin;
+    var pct = clamp(((t.value - CONFIG.tempMin) / span) * 100, 0, 100);
+    el('r2-band-marker').style.left = pct + '%';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Actuator rendering
+  // ---------------------------------------------------------------------------
+  function renderActuators() {
+    renderActuator('room1', 'light');
+    renderActuator('room2', 'fan');
+  }
+
+  function renderActuator(room, name) {
+    var a = state.actuators[room][name];
+    var mode = state.modes[room];
+    var prefix = room === 'room1' ? 'r1-light' : 'r2-fan';
+    var label = ACTUATOR_LABEL[room][name];
+    var sw = el(prefix + '-switch');
+    var badge = el(prefix + '-badge');
+    var bulb = el(prefix + '-bulb');
+
+    sw.classList.toggle('off', !a.on);
+    sw.setAttribute('aria-checked', a.on ? 'true' : 'false');
+    sw.disabled = mode !== 'manual';
+    sw.setAttribute('aria-label', label + ', simulated control, ' + mode + ' mode');
+    sw.title = mode === 'manual'
+      ? 'Simulated control'
+      : 'Switch this room to Manual to use the control';
+
+    badge.textContent = a.on ? 'ON' : 'OFF';
+    badge.className = 'state-badge ' + (a.on ? (name === 'light' ? 'on' : 'fan-on') : 'off');
+    bulb.className = 'bulb ' + (a.on ? 'on' : 'off');
+
+    var direction = a.on ? 'on' : 'off';
+    el(prefix + '-desc').textContent = mode === 'auto'
+      ? direction + ' since ' + hhmmss(a.since) + ' · auto, controller decides from sensors'
+      : direction + ' since ' + hhmmss(a.since) + ' · manual, simulated';
+
+    var confirmed = el(prefix + '-confirmed');
+    if (a.confirmed) {
+      confirmed.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="m4 12.5 5 5L20 6.5"/></svg>state confirmed ' + hhmmss(a.since);
+    } else {
+      confirmed.innerHTML = '<span class="dot warn"></span>not confirmed, no controller link';
+    }
+  }
+
+  function renderVentilationMetric() {
+    var fan = state.actuators.room2.fan;
+    var value = el('r2-vent');
+    value.className = 'value ' + (fan.on ? 'state-warn' : 'state-idle');
+    value.textContent = fan.on ? 'Running' : 'Idle';
+    el('r2-vent-foot').textContent =
+      'starts at ' + CONFIG.fanOn.toFixed(1) + ' °C · stops at ' + CONFIG.fanOff.toFixed(1) + ' °C';
+  }
+
+  // ---------------------------------------------------------------------------
+  // History: rolling temperature window and occupancy strip
+  // ---------------------------------------------------------------------------
+  function renderHistory() {
+    renderOccupancyStrip();
+    renderChart();
+  }
+
+  function renderOccupancyStrip() {
+    var buckets = state.history.occupancy;
+    el('r1-strip').innerHTML = buckets.map(function (b) {
+      return '<span class="' + (b.occupied ? 'occ' : 'vac') + '" style="flex:1"></span>';
+    }).join('');
+
+    var now = Date.now();
+    el('r1-strip-axis').innerHTML = axisLabels(now - CONFIG.occupancyWindowMs, now, 5)
+      .map(function (t) { return '<span>' + t + '</span>'; }).join('');
+  }
+
+  function renderChart() {
+    var now = Date.now();
+    var start = now - CONFIG.tempWindowMs;
+    var min = CONFIG.tempMin;
+    var max = CONFIG.tempMax;
+    var W = 320, H = 120, PAD = 8;
+
+    function yFor(v) {
+      return H - PAD - ((clamp(v, min, max) - min) / (max - min)) * (H - PAD * 2);
+    }
+    function xFor(t) {
+      return ((t - start) / CONFIG.tempWindowMs) * W;
+    }
+
+    el('thresh-on').setAttribute('y1', yFor(CONFIG.fanOn));
+    el('thresh-on').setAttribute('y2', yFor(CONFIG.fanOn));
+    el('thresh-off').setAttribute('y1', yFor(CONFIG.fanOff));
+    el('thresh-off').setAttribute('y2', yFor(CONFIG.fanOff));
+
+    var points = state.history.temperature.filter(function (p) {
+      return p.t >= start && p.t <= now && isFinite(p.v);
+    });
+
+    var line = el('chart-line');
+    var area = el('chart-area');
+    var lastDot = el('chart-last');
+    var empty = points.length < 2;
+
+    el('chart-empty').style.display = empty ? 'block' : 'none';
+
+    if (empty) {
+      line.setAttribute('points', '');
+      area.setAttribute('points', '');
+      lastDot.setAttribute('opacity', '0');
+      setText('temp-stat-min', 'n/a');
+      setText('temp-stat-mean', 'n/a');
+      setText('temp-stat-max', 'n/a');
+      setText('temp-samples', '0 samples');
+      el('temp-chart').setAttribute('aria-label', 'Temperature history, no samples yet');
+      el('temp-axis').innerHTML = axisLabels(start, now, 5)
+        .map(function (t) { return '<span>' + t + '</span>'; }).join('');
+      return;
+    }
+
+    var coords = points.map(function (p) {
+      return xFor(p.t).toFixed(1) + ',' + yFor(p.v).toFixed(1);
+    });
+
+    line.setAttribute('points', coords.join(' '));
+    area.setAttribute('points',
+      xFor(points[0].t).toFixed(1) + ',' + H + ' ' +
+      coords.join(' ') + ' ' +
+      xFor(points[points.length - 1].t).toFixed(1) + ',' + H);
+
+    var last = points[points.length - 1];
+    lastDot.setAttribute('cx', xFor(last.t).toFixed(1));
+    lastDot.setAttribute('cy', yFor(last.v).toFixed(1));
+    lastDot.setAttribute('opacity', '1');
+
+    var values = points.map(function (p) { return p.v; });
+    var lo = Math.min.apply(null, values);
+    var hi = Math.max.apply(null, values);
+    var mean = values.reduce(function (a, b) { return a + b; }, 0) / values.length;
+
+    setText('temp-stat-min', lo.toFixed(1) + ' °C');
+    setText('temp-stat-mean', mean.toFixed(1) + ' °C');
+    setText('temp-stat-max', hi.toFixed(1) + ' °C');
+    setText('temp-samples', points.length + (points.length === 1 ? ' sample' : ' samples'));
+
+    el('temp-chart').setAttribute('aria-label',
+      'Temperature history over the last 60 minutes. Minimum ' + lo.toFixed(1) +
+      ' degrees, mean ' + mean.toFixed(1) + ', maximum ' + hi.toFixed(1) +
+      '. Fan on at ' + CONFIG.fanOn.toFixed(1) + ', fan off at ' + CONFIG.fanOff.toFixed(1) + '.');
+
+    el('temp-axis').innerHTML = axisLabels(start, now, 5)
+      .map(function (t) { return '<span>' + t + '</span>'; }).join('');
+  }
+
+  function axisLabels(from, to, count) {
+    var out = [];
+    for (var i = 0; i < count; i++) {
+      out.push(hhmm(from + ((to - from) * i) / (count - 1)));
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Events. Requested, accepted and confirmed are separate stages on purpose:
+  // the dashboard can request, it can accept locally, but only the controller
+  // can confirm that an actuator actually moved.
+  // ---------------------------------------------------------------------------
+  function addEvent(ev) {
+    ev.t = ev.t || Date.now();
+    state.events.unshift(ev);
+    if (state.events.length > 40) state.events.length = 40;
+  }
+
+  function renderEvents() {
+    var feed = el('event-feed');
+    var list = state.events.slice(0, CONFIG.maxVisibleEvents);
+
+    if (!list.length) {
+      feed.innerHTML = '<div class="feed-empty">No events yet. Mode changes, commands, faults and connection changes are logged here.</div>';
+      return;
+    }
+
+    feed.innerHTML = list.map(function (ev) {
+      var stage = ev.stage
+        ? '<span class="stage s-' + ev.stage + '">' + ev.stage + '</span>'
+        : '';
+      var tag = ev.tag ? '<span class="tag">' + esc(ev.tag) + '</span>' : '';
+      var detail = ev.detail ? ' · ' + esc(ev.detail) : '';
+      return '<div class="ev">' +
+        '<span class="t">' + hhmmss(ev.t) + '</span>' +
+        '<span class="ico ' + ev.ico + '"></span>' +
+        '<div class="body"><b>' + esc(ev.title) + '</b>' + detail + tag + stage + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Connection panel. Everything reflects state.connection, so nothing claims a
+  // live broker while the dashboard has none.
+  // ---------------------------------------------------------------------------
+  function renderConnection() {
+    var c = state.connection;
+    var connected = c.mqtt === 'connected';
+
+    setText('mqtt-text', connected ? 'connected' : 'not connected');
+    el('mqtt-dot').className = 'dot ' + (connected ? 'ok' : 'off');
+
+    var broker = el('conn-broker');
+    broker.textContent = connected ? 'online' : 'not connected';
+    broker.className = 'v ' + (connected ? 'ok' : 'warn');
+
+    setText('conn-last', c.lastMessageAt ? ago(c.lastMessageAt) : 'none');
+    setText('conn-uptime', connected && c.connectedSince ? duration(Date.now() - c.connectedSince) : 'n/a');
+    setText('conn-qos', connected && c.qos != null ? String(c.qos) : 'not negotiated');
+    setText('conn-retained', connected && c.retainedTopics != null ? String(c.retainedTopics) : 'n/a');
+    setText('conn-lwt', connected && c.lwt ? 'armed' : 'not armed');
+    setText('conn-outage', c.lastOutageMs != null ? duration(c.lastOutageMs) : 'none recorded');
+    setText('conn-missed', connected && c.missedStateChanges != null ? String(c.missedStateChanges) : 'n/a');
+
+    var banner = el('conn-banner');
+    banner.className = 'banner ' + (connected ? '' : 'warn');
+    banner.querySelector('span').textContent = connected
+      ? 'Broker reachable. Actuator states below are reported by the controller.'
+      : 'No broker connection. Actuator states cannot be confirmed, and every value here is sample data.';
+
+    var alerts = connected ? 0 : 1;
+    setText('alert-text', alerts === 0 ? 'no alerts' : alerts + ' alert');
+    el('alert-dot').className = 'dot ' + (alerts ? 'warn' : 'ok');
+    el('alert-pill').title = connected
+      ? 'No active alerts'
+      : 'MQTT broker is not connected';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mode-specific notes
+  // ---------------------------------------------------------------------------
+  function renderModeNotes() {
+    renderVentilationMetric();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Full render
+  // ---------------------------------------------------------------------------
+  function render() {
+    renderModes();
+    renderSensors();
+    renderActuators();
+    renderModeNotes();
+    renderHistory();
+    renderEvents();
+    renderConnection();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Threshold labels that come straight from CONFIG
+  // ---------------------------------------------------------------------------
+  function applyConfigToDom() {
+    var span = CONFIG.tempMax - CONFIG.tempMin;
+
+    el('r2-band-zone').style.left = (((CONFIG.fanOff - CONFIG.tempMin) / span) * 100) + '%';
+    el('r2-band-zone').style.width = (((CONFIG.fanOn - CONFIG.fanOff) / span) * 100) + '%';
+
+    el('r2-band-scale').innerHTML =
+      '<span>' + CONFIG.tempMin + ' °C</span>' +
+      '<span class="tick-on">' + CONFIG.fanOff.toFixed(1) + ' °C fan off</span>' +
+      '<span class="tick-on">' + CONFIG.fanOn.toFixed(1) + ' °C fan on</span>' +
+      '<span>' + CONFIG.tempMax + ' °C</span>';
+
+    el('temp-stat-thresholds').textContent =
+      CONFIG.fanOff.toFixed(1) + ' / ' + CONFIG.fanOn.toFixed(1) + ' °C';
+
+    el('r2-temp-sub').textContent =
+      'Last ' + Math.round(CONFIG.tempWindowMs / 60000) + ' minutes · 1 sample / ' +
+      (CONFIG.sampleIntervalMs / 1000) + ' s';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Data entry point. Everything that reaches the page, sample feed or real
+  // MQTT payload, comes through here.
+  // ---------------------------------------------------------------------------
+  function validate(sensor, value) {
+    if (sensor === 'occupancy') {
+      if (typeof value !== 'boolean') return { ok: false, error: 'PIR payload was not a boolean' };
+      return { ok: true, value: value };
+    }
+    if (typeof value !== 'number' || !isFinite(value)) {
+      return { ok: false, error: 'reading was not a number' };
+    }
+    if (sensor === 'temperature' && (value < -10 || value > 60)) {
+      return { ok: false, error: 'temperature ' + value + ' °C is out of range' };
+    }
+    if (sensor === 'humidity' && (value < 0 || value > 100)) {
+      return { ok: false, error: 'humidity ' + value + ' % is out of range' };
+    }
+    if (sensor === 'lux' && (value < 0 || value > 5000)) {
+      return { ok: false, error: 'light level ' + value + ' lux is out of range' };
+    }
+    return { ok: true, value: sensor === 'temperature' ? round1(value) : Math.round(value) };
+  }
+
+  function ingest(room, sensor, value) {
+    var target = state.sensors[room][sensor];
+    if (!target) return false;
+
+    var check = validate(sensor, value);
+    var now = Date.now();
+
+    if (!check.ok) {
+      target.status = 'invalid';
+      target.value = null;
+      target.error = check.error;
+      target.at = now;
+      addEvent({
+        kind: 'fault', ico: 'i-warn', tag: 'fault',
+        title: SENSOR_LABEL[room][sensor] + ' rejected',
+        detail: check.error
+      });
+      render();
+      return false;
+    }
+
+    if (sensor === 'occupancy' && target.value !== check.value) {
+      state.occupancySince = now;
+    }
+
+    target.value = check.value;
+    target.status = 'ok';
+    target.error = null;
+    target.at = now;
+
+    if (sensor === 'temperature') pushTemperature(now, check.value);
+    if (sensor === 'occupancy') recordOccupancy(now, check.value);
+
+    render();
+    return true;
+  }
+
+  function pushTemperature(ts, value) {
+    var hist = state.history.temperature;
+    var last = hist[hist.length - 1];
+    if (last && ts - last.t < 1000) return;   // ignore bursts, keep the west line readable
+    hist.push({ t: ts, v: value });
+    var cutoff = ts - CONFIG.tempWindowMs - 60000;
+    while (hist.length && hist[0].t < cutoff) hist.shift();
+  }
+
+  function recordOccupancy(ts, occupied) {
+    var bucketMs = CONFIG.occupancyWindowMs / CONFIG.occupancyBuckets;
+    var start = Math.floor(ts / bucketMs) * bucketMs;
+    var hist = state.history.occupancy;
+    var last = hist[hist.length - 1];
+
+    if (last && last.t === start) {
+      last.occupied = last.occupied || occupied;
+    } else {
+      hist.push({ t: start, occupied: occupied });
+    }
+
+    while (hist.length && ts - hist[0].t > CONFIG.occupancyWindowMs) hist.shift();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Commands. Only allowed in manual mode, and never described as confirmed
+  // unless a controller state message arrives later.
+  // ---------------------------------------------------------------------------
+  function requestActuator(room, name, desired) {
+    var mode = state.modes[room];
+    var label = ACTUATOR_LABEL[room][name];
+    var a = state.actuators[room][name];
+
+    if (mode !== 'manual') {
+      addEvent({
+        kind: 'command', ico: 'i-warn', tag: 'blocked',
+        title: label + ' command blocked',
+        detail: 'room is in auto mode, the controller owns this actuator'
+      });
+      render();
+      return;
+    }
+
+    if (a.on === desired) return;
+
+    a.on = desired;
+    a.since = Date.now();
+    a.source = 'manual';
+    a.confirmed = false;
+
+    addEvent({
+      kind: 'command', ico: 'i-violet', tag: 'manual', stage: 'requested',
+      title: label + ' ' + (desired ? 'ON' : 'OFF') + ' requested',
+      detail: 'clicked in the dashboard'
+    });
+
+    var event = state.events[0];
+
+    // The dashboard can only accept the request locally. Confirmation needs a
+    // state message from the controller, so it is left outstanding on purpose.
+    window.setTimeout(function () {
+      if (event.stage !== 'requested') return;
+      event.stage = 'accepted';
+      event.detail = 'queued locally, waiting for the controller';
+      renderEvents();
+    }, 600);
+
+    render();
+  }
+
+  function confirmActuator(room, name, on, source) {
+    var a = state.actuators[room][name];
+    a.on = !!on;
+    a.since = Date.now();
+    a.source = source || 'controller';
+    a.confirmed = true;
+    addEvent({
+      kind: 'state', ico: 'i-ok', tag: source || 'auto', stage: 'confirmed',
+      title: ACTUATOR_LABEL[room][name] + ' confirmed ' + (a.on ? 'ON' : 'OFF'),
+      detail: 'state message received from the controller'
+    });
+    render();
+  }
+
+  function setConnection(patch) {
+    var before = state.connection.mqtt;
+    Object.keys(patch).forEach(function (k) { state.connection[k] = patch[k]; });
+
+    if (patch.mqtt && patch.mqtt !== before) {
+      addEvent({
+        kind: 'net', ico: patch.mqtt === 'connected' ? 'i-ok' : 'i-warn', tag: 'net',
+        title: patch.mqtt === 'connected' ? 'Broker connected' : 'Broker connection lost',
+        detail: patch.mqtt === 'connected' ? 'state will be republished' : 'local activity unknown to the dashboard'
+      });
+    }
+    render();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sample feed. Clearly sample data: it is generated in the browser and marked
+  // as such in the header. Replace it with real messages using
+  // window.smartnest.ingest(), which goes through exactly the same path.
+  // ---------------------------------------------------------------------------
+  function sampleTemp(phase) {
+    return 25.4 + 1.8 * Math.sin(phase / 12) + (Math.random() - 0.5) * 0.3;
+  }
+
+  function seedHistory() {
+    var now = Date.now();
+    var count = 120;
+    for (var i = count; i >= 1; i--) {
+      var t = now - i * (CONFIG.tempWindowMs / count);
+      var v = 25.4 + 1.8 * Math.sin((i / count) * Math.PI * 2 * 1.2) + (Math.random() - 0.5) * 0.25;
+      state.history.temperature.push({ t: t, v: round1(v) });
+    }
+
+    var last = state.history.temperature[state.history.temperature.length - 1];
+    state.sensors.room2.temperature = reading(last.v);
+
+    // Occupancy buckets for the last hour, ending occupied so the sample state
+    // on screen matches the metric.
+    var bucketMs = CONFIG.occupancyWindowMs / CONFIG.occupancyBuckets;
+    var start = Math.floor(now / bucketMs) * bucketMs;
+    var pattern = [0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1];
+    for (var b = 0; b < CONFIG.occupancyBuckets; b++) {
+      state.history.occupancy.push({
+        t: start - (CONFIG.occupancyBuckets - 1 - b) * bucketMs,
+        occupied: !!pattern[b]
+      });
+    }
+  }
+
+  function feedTick() {
+    feedPhase += 1;
+    ingest('room2', 'temperature', sampleTemp(feedPhase));
+    ingest('room2', 'humidity', 50 + Math.sin(feedPhase / 14) * 4 + (Math.random() - 0.5) * 2);
+    ingest('room1', 'lux', Math.max(4, 38 + Math.sin(feedPhase / 9) * 10 + (Math.random() - 0.5) * 6));
+
+    // The PIR reports on every cycle, not only when it changes, so the metric
+    // never looks stale just because nobody walked past. It is held steady here
+    // because the sample feed cannot emulate the lighting rule; a real PIR
+    // payload arrives through ingest() and may change the value at any time.
+    ingest('room1', 'occupancy', state.sensors.room1.occupancy.value === true);
+  }
+
+  function startFeed() {
+    if (feedTimer) return;
+    feedTimer = window.setInterval(feedTick, CONFIG.sampleIntervalMs);
+  }
+
+  function stopFeed() {
+    if (!feedTimer) return;
+    window.clearInterval(feedTimer);
+    feedTimer = null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wiring
+  // ---------------------------------------------------------------------------
+  function bind() {
+    document.querySelectorAll('[data-actuator]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var parts = btn.getAttribute('data-actuator').split(':');
+        var room = parts[0];
+        var name = parts[1];
+        requestActuator(room, name, !state.actuators[room][name].on);
+      });
+    });
+
+    el('system-mode').addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-mode]') : null;
+      if (btn) setSystemMode(btn.getAttribute('data-mode'));
+    });
+
+    document.querySelectorAll('.room-mode').forEach(function (seg) {
+      seg.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('button[data-mode]') : null;
+        if (btn) setRoomMode(seg.getAttribute('data-room'), btn.getAttribute('data-mode'));
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Boot
+  // ---------------------------------------------------------------------------
+  function boot() {
+    applyConfigToDom();
+    seedHistory();
+    renderClock();
+
+    addEvent({
+      kind: 'info', ico: 'i-cool', tag: 'data',
+      title: 'Sample data loaded',
+      detail: 'no sensor messages received yet'
+    });
+    addEvent({
+      kind: 'net', ico: 'i-warn', tag: 'net',
+      title: 'No MQTT connection',
+      detail: 'dashboard opened without a controller link'
+    });
+
+    bind();
+    render();
+    startFeed();
+
+    // Keep the clock and the "x s ago" labels alive without a full re-render.
+    window.setInterval(function () {
+      renderClock();
+      renderSensors();
+    }, 1000);
+  }
+
+  // Public surface for the rest of the team. Real MQTT handlers should call
+  // ingest() and setConnection(); nothing in the page needs to be rewritten.
+  window.smartnest = {
+    config: CONFIG,
+    state: state,
+    ingest: ingest,
+    setConnection: setConnection,
+    setSystemMode: setSystemMode,
+    setRoomMode: setRoomMode,
+    requestActuator: requestActuator,
+    confirmActuator: confirmActuator,
+    stopFeed: stopFeed,
+    startFeed: startFeed,
+    render: render
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
-
